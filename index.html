@@ -719,7 +719,7 @@ function renderOutput(){
     block.appendChild(pre);
     const actions = el('div','version-actions');
     const copyBtn = el('button', null, 'Copy Prompt');
-    copyBtn.onclick = ()=>{ navigator.clipboard.writeText(versions[vk]).then(()=>showToast('Copied Version '+(idx+1))); };
+    copyBtn.onclick = ()=>{ navigator.clipboard.writeText(versions[vk]).then(()=>showToast('Copied Version '+(idx+1))).catch(()=>showToast('Could not copy — select the text manually')); };
     const saveBtn = el('button', null, entry && entry.saved ? '✓ Saved' : 'Save');
     saveBtn.onclick = ()=> saveConcept(vk, entry ? entry.favorite : false);
     const favBtn = el('button', 'fav'+(entry && entry.favorite ? ' is-fav':''), entry && entry.favorite ? '★ Favorited' : '☆ Favorite');
@@ -745,7 +745,7 @@ function renderSavedView(){
     left.appendChild(el('div','meta', new Date(item.timestamp).toLocaleString()));
     const actions = el('div','actions');
     const copyBtn = el('button', null, 'Copy');
-    copyBtn.onclick = ()=> navigator.clipboard.writeText(item.text).then(()=>showToast('Copied'));
+    copyBtn.onclick = ()=> navigator.clipboard.writeText(item.text).then(()=>showToast('Copied')).catch(()=>showToast('Could not copy — select the text manually'));
     const openBtn = el('button', null, 'Open in Studio');
     openBtn.onclick = ()=>{ restoreState(item.state); location.hash = '#studio'; };
     actions.appendChild(copyBtn); actions.appendChild(openBtn);
@@ -826,7 +826,7 @@ document.querySelectorAll('.top-nav a[data-view]').forEach(a=>{
 });
 document.getElementById('signout-btn').addEventListener('click', e=>{
   e.preventDefault();
-  sessionStorage.removeItem('dms_signed_in');
+  safeSessionRemove('dms_signed_in');
   showLock();
 });
 
@@ -843,19 +843,27 @@ function renderView(){
 window.addEventListener('hashchange', renderView);
 
 /* ===================== ACCESS LOCK (demo placeholder) ===================== */
+/* Some browsers (private/incognito modes, strict cookie-blocking settings) throw
+   when sessionStorage is touched. These wrappers make sure a storage failure
+   never stops the unlock button from working — it just won't "remember" past a refresh. */
+let _memSignedIn = false;
+function safeSessionGet(key){ try{ return sessionStorage.getItem(key); }catch(e){ return key==='dms_signed_in' ? (_memSignedIn?'1':null) : null; } }
+function safeSessionSet(key,val){ try{ sessionStorage.setItem(key,val); }catch(e){} if(key==='dms_signed_in') _memSignedIn = true; }
+function safeSessionRemove(key){ try{ sessionStorage.removeItem(key); }catch(e){} if(key==='dms_signed_in') _memSignedIn = false; }
+
 function showLock(){ document.getElementById('lock-overlay').hidden = false; }
 function hideLock(){ document.getElementById('lock-overlay').hidden = true; }
 document.getElementById('access-unlock-btn').addEventListener('click', ()=>{
   const code = document.getElementById('access-code-input').value.trim();
-  if(code){ sessionStorage.setItem('dms_signed_in','1'); hideLock(); }
+  if(code){ safeSessionSet('dms_signed_in','1'); hideLock(); }
   else showToast('Enter an access code to continue');
 });
 document.getElementById('access-code-input').addEventListener('keydown', e=>{
-  if(e.key==='Enter') document.getElementById('access-unlock-btn').click();
+  if(e.key==='Enter'){ e.preventDefault(); document.getElementById('access-unlock-btn').click(); }
 });
 
 /* ===================== INIT ===================== */
-if(!sessionStorage.getItem('dms_signed_in')) showLock();
+if(!safeSessionGet('dms_signed_in')) showLock();
 if(!location.hash) location.hash = '#studio';
 render();
 renderView();
