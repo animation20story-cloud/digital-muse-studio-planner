@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Digital Muse Studio — Planner Creation Studio</title>
+<style>
+  :root{
+    --plum:#3d2352;
+    --amethyst:#7b4fa3;
+    --lilac:#b79fd6;
+    --lavender:#e7dcf6;
+    --lavender-soft:#f4eefc;
+    --gold:#c9a24b;
+    --rosegold:#caa08e;
+    --ink:#2b1f38;
+    --white:#ffffff;
+    --line:#e4d9f3;
+    --shadow: 0 8px 24px rgba(61,35,82,0.10);
+    --radius: 18px;
+    --radius-sm: 12px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    background: linear-gradient(180deg,#faf7fd 0%, #f3ecfb 100%);
+    color:var(--ink);
+    min-height:100vh;
+  }
+  #lock-overlay{
+    position:fixed;inset:0;background:linear-gradient(160deg,var(--plum),var(--amethyst));
+    display:flex;align-items:center;justify-content:center;z-index:999;padding:20px;
+  }
+  #lock-overlay .lock-card{
+    background:var(--white);border-radius:var(--radius);padding:36px 30px;max-width:380px;width:100%;
+    box-shadow:var(--shadow);text-align:center;
+  }
+  #lock-overlay h2{margin:0 0 6px;color:var(--plum);}
+  #lock-overlay p{color:#6b5c7d;font-size:14px;margin-bottom:20px;}
+  #lock-overlay input{
+    width:100%;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--line);
+    font-size:15px;margin-bottom:12px;text-align:center;letter-spacing:1px;
+  }
+  #lock-overlay button{
+    width:100%;padding:12px;border:none;border-radius:var(--radius-sm);
+    background:linear-gradient(120deg,var(--amethyst),var(--plum));color:#fff;font-weight:600;
+    cursor:pointer;font-size:15px;
+  }
+  #lock-overlay .lock-note{font-size:11px;color:#9c8bb0;margin-top:14px;line-height:1.5;}
+
+  .wrap{max-width:1300px;margin:0 auto;padding:20px 20px 60px;}
+
+  header.header-card{
+    background:linear-gradient(135deg,var(--plum) 0%, var(--amethyst) 100%);
+    border-radius: var(--radius);
+    padding:26px 28px;
+    color:#fff;
+    box-shadow:var(--shadow);
+    display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;
+  }
+  header .titles h1{margin:0;font-size:24px;font-weight:700;letter-spacing:.2px;}
+  header .titles p{margin:4px 0 0;font-size:14px;color:var(--lavender);}
+  nav.top-nav{display:flex;flex-wrap:wrap;gap:8px;}
+  nav.top-nav a{
+    color:#fff;text-decoration:none;font-size:13px;font-weight:600;
+    padding:9px 14px;border-radius:999px;background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.25);cursor:pointer;transition:background .15s;
+  }
+  nav.top-nav a:hover{background:rgba(255,255,255,0.22);}
+  nav.top-nav a.active{background:#fff;color:var(--plum);}
+  nav.top-nav a.signout{background:rgba(0,0,0,0.15);}
+
+  .top-controls{
+    display:flex;flex-wrap:wrap;gap:10px;margin:20px 0;
+  }
+  .top-controls button{
+    padding:12px 20px;border-radius:999px;border:1px solid var(--line);
+    background:#fff;font-weight:600;font-size:14px;cursor:pointer;color:var(--plum);
+    box-shadow:0 2px 6px rgba(61,35,82,0.06);
+  }
+  .top-controls button.primary{
+    background:linear-gradient(120deg,var(--amethyst),var(--plum));color:#fff;border:none;
+  }
+  .top-controls button.gold{
+    background:linear-gradient(120deg,#e8cf94,var(--gold));color:var(--plum);border:none;
+  }
+  .top-controls button:hover{filter:brightness(1.04);}
+
+  .studio-grid{display:grid;grid-template-columns: 1.15fr 0.85fr;gap:22px;align-items:start;}
+  @media (max-width: 980px){ .studio-grid{grid-template-columns: 1fr;} }
+
+  .card{
+    background:#fff;border-radius:var(--radius);padding:22px 22px;margin-bottom:18px;
+    box-shadow:var(--shadow);border:1px solid var(--line);
+  }
+  .card h3{margin:0 0 4px;color:var(--plum);font-size:16px;}
+  .card .sub{font-size:12.5px;color:#8a7a9c;margin-bottom:14px;}
+  label.field-label{display:block;font-size:13px;font-weight:600;color:var(--plum);margin:14px 0 6px;}
+  input[type=text], textarea{
+    width:100%;padding:11px 13px;border-radius:var(--radius-sm);border:1px solid var(--line);
+    font-size:14px;font-family:inherit;background:var(--lavender-soft);
+  }
+  textarea{resize:vertical;min-height:64px;}
+  .group-heading{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--amethyst);
+    font-weight:700;margin:16px 0 8px;}
+  .pill-group{display:flex;flex-wrap:wrap;gap:8px;}
+  .pill{
+    padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--lavender-soft);
+    font-size:13px;cursor:pointer;color:var(--ink);transition:all .12s;
+  }
+  .pill:hover{border-color:var(--lilac);}
+  .pill.active{background:linear-gradient(120deg,var(--amethyst),var(--plum));color:#fff;border-color:transparent;}
+  .custom-row{display:flex;gap:8px;margin-top:10px;}
+  .custom-row input{flex:1;font-size:13px;padding:9px 12px;}
+  .custom-row button.add-btn{
+    padding:9px 14px;border-radius:var(--radius-sm);border:1px dashed var(--lilac);
+    background:#fff;color:var(--amethyst);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;
+  }
+  .exclude-box textarea{border-color:#f0c6c6;background:#fff7f7;}
+
+  .selections-pills{display:flex;flex-wrap:wrap;gap:8px;}
+  .sel-pill{
+    padding:7px 13px;border-radius:999px;background:var(--lavender);color:var(--plum);
+    font-size:12.5px;font-weight:600;
+  }
+  .sel-pill.excl{background:#fde7e7;color:#a13b3b;text-decoration:line-through;}
+  .empty-note{color:#a294b4;font-size:13px;font-style:italic;}
+
+  .version-block{border:1px solid var(--line);border-radius:var(--radius-sm);padding:16px;margin-bottom:14px;background:var(--lavender-soft);}
+  .version-block h4{margin:0 0 8px;color:var(--plum);font-size:14px;}
+  .version-block pre{
+    white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:12.8px;line-height:1.55;
+    color:#3a2c4a;margin:0 0 12px;max-height:340px;overflow-y:auto;background:#fff;padding:12px;border-radius:10px;border:1px solid var(--line);
+  }
+  .version-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .version-actions button{
+    padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:12.5px;
+    font-weight:600;color:var(--amethyst);cursor:pointer;
+  }
+  .version-actions button.fav.is-fav{background:var(--gold);color:#fff;border-color:transparent;}
+
+  .list-item{
+    border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:12px;
+    background:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+  }
+  .list-item .meta{font-size:12px;color:#8a7a9c;}
+  .list-item .actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .list-item .actions button{
+    padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--lavender-soft);
+    font-size:12.5px;font-weight:600;color:var(--plum);cursor:pointer;
+  }
+  .badge-fav{background:var(--gold);color:#fff;font-size:11px;padding:3px 9px;border-radius:999px;margin-left:8px;}
+  .toast{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--plum);color:#fff;
+    padding:11px 20px;border-radius:999px;font-size:13px;box-shadow:var(--shadow);opacity:0;transition:opacity .25s;z-index:500;
+  }
+  .toast.show{opacity:1;}
+  .req{color:#a13b3b;font-size:12px;margin-left:6px;}
+</style>
+</head>
+<body>
+
+<div id="lock-overlay" hidden>
+  <div class="lock-card">
+    <h2>✨ Digital Muse Studio</h2>
+    <p>Enter your private customer access code to open the Planner Creation Studio.</p>
+    <input id="access-code-input" type="text" placeholder="Access code" />
+    <button id="access-unlock-btn">Open Planner Creation Studio</button>
+    <div class="lock-note">Demo build: any code unlocks the Studio. In production this checks a permanent, unique access code issued after checkout and stored in Supabase.</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="header-card">
+    <div class="titles">
+      <h1>Digital Muse Studio — Planner Creation Studio</h1>
+      <p>Create planners, journals, and printable pages.</p>
+    </div>
+    <nav class="top-nav">
+      <a data-view="studio" href="#studio">Studio</a>
+      <a data-view="saved" href="#saved">Saved &amp; Favorites</a>
+      <a data-view="history" href="#history">History</a>
+      <a class="signout" id="signout-btn" href="#">Sign Out</a>
+    </nav>
+  </header>
+
+  <!-- STUDIO VIEW -->
+  <main id="view-studio">
+    <div class="top-controls">
+      <button id="reset-btn">↺ Reset</button>
+      <button id="randomize-btn" class="gold">✦ Smart Randomize</button>
+      <button id="generate-btn" class="primary">Generate Prompt</button>
+    </div>
+
+    <div class="studio-grid">
+      <!-- LEFT: BUILDER -->
+      <div>
+        <div class="card">
+          <h3>1. What are you creating?</h3>
+          <div class="sub">Planner type &amp; product format</div>
+          <label class="field-label">Planner Type</label>
+          <div id="field-plannerType"></div>
+          <label class="field-label">Product Format</label>
+          <div id="field-productFormat"></div>
+        </div>
+
+        <div class="card">
+          <h3>2. Title &amp; Content <span class="req">required</span></h3>
+          <div class="sub">Your exact wording is preserved in the generated blueprint.</div>
+          <label class="field-label">Title <span class="req">required</span></label>
+          <input type="text" id="field-title" placeholder="e.g. That Girl Weekly Reset" />
+          <label class="field-label">Subtitle / Tagline</label>
+          <input type="text" id="field-subtitle" placeholder="Optional" />
+          <label class="field-label">Section Title</label>
+          <input type="text" id="field-sectionTitle" placeholder="Optional" />
+          <label class="field-label">Page Instructions / Supporting Text</label>
+          <textarea id="field-supportingText" placeholder="Optional"></textarea>
+        </div>
+
+        <div class="card">
+          <h3>3. What does this page need?</h3>
+          <div class="sub">Page / section types — true multi-select, grouped by category</div>
+          <div id="field-pageTypes"></div>
+        </div>
+
+        <div class="card">
+          <h3>Planner Sections / Components</h3>
+          <div id="field-components"></div>
+        </div>
+
+        <div class="card">
+          <h3>4. How should it be organized?</h3>
+          <div class="sub">Layout</div>
+          <div id="field-layout"></div>
+        </div>
+
+        <div class="card">
+          <h3>5. How should it look?</h3>
+          <div class="sub">Aesthetic / Theme</div>
+          <div id="field-aesthetic"></div>
+          <div class="group-heading">Typography / Font Style</div>
+          <div id="field-typography"></div>
+          <div class="group-heading">Color Palette</div>
+          <div id="field-colors"></div>
+          <div class="group-heading">Decorative Style / Elements</div>
+          <div id="field-decorative"></div>
+        </div>
+
+        <div class="card exclude-box">
+          <h3>6. What should I leave out?</h3>
+          <div class="sub">Smart Randomize will never introduce these. Comma or newline separated.</div>
+          <textarea id="field-exclude" placeholder="e.g. pink, floral, script, glitter"></textarea>
+        </div>
+      </div>
+
+      <!-- RIGHT: OUTPUT -->
+      <div>
+        <div class="card">
+          <h3>Your Selections</h3>
+          <div id="your-selections" class="selections-pills"></div>
+        </div>
+        <div class="card">
+          <h3>Generated Prompts</h3>
+          <div id="generated-output"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- SAVED & FAVORITES VIEW -->
+  <main id="view-saved" hidden>
+    <div class="card">
+      <h3>Saved &amp; Favorites</h3>
+      <div class="sub">Everything you've saved or favorited from the Studio.</div>
+      <div id="saved-list"></div>
+    </div>
+  </main>
+
+  <!-- HISTORY VIEW -->
+  <main id="view-history" hidden>
+    <div class="card">
+      <h3>History</h3>
+      <div class="sub">Every concept you've generated. Open one to restore it in the Studio.</div>
+      <div id="history-list"></div>
+    </div>
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ===================== DATA ===================== */
+const DATA = {
+  plannerTypes: ["Daily Planner","Weekly Planner","Monthly Planner","Yearly Planner","Goal Planner","Budget Planner","Finance Tracker","Meal Planner","Fitness Planner","Self-Care Planner","Mom Planner","Home Management Planner","Business Planner","Content Planner","Social Media Planner","Student Planner","Teacher Planner","Wedding Planner","Travel Planner","Project Planner","Journal","Workbook","Guided Journal","Notebook"],
+  productFormats: ["Printable Planner","Digital Planner","Printable + Digital","Goodnotes-style Planner","Canva Template","Planner Pages","Planner Cover","Planner Bundle","Workbook","Journal"],
+  pageGroups: {
+    "Planning Pages": ["Daily Planner","Weekly Planner","Monthly Planner","Year-at-a-Glance","Schedule","Time Blocking","Appointment Page","To-Do List","Priority List","Project Planner","Meeting Notes"],
+    "Goals & Personal Growth": ["Goals Page","Vision Board","Vision Planning","Goal Breakdown","Action Plan","Motivation Page","Affirmations","Gratitude Page","Reflection Page","Self-Care Page","Mindfulness Page","Journal Prompt Page"],
+    "Trackers": ["Habit Tracker","Mood Tracker","Water Tracker","Fitness Tracker","Sleep Tracker","Reading Tracker","Savings Tracker","Debt Tracker","Expense Tracker","Progress Tracker","Medication Tracker"],
+    "Finance": ["Budget","Monthly Budget","Expense Log","Bill Tracker","Savings Goal","Debt Payoff","Cash-Flow Tracker","Financial Goals"],
+    "Home & Life": ["Meal Planner","Grocery List","Cleaning Schedule","Chore Chart","Home Maintenance","Errands","Shopping List","Family Schedule","Important Contacts"],
+    "Business & Content": ["Business Planner","Content Planner","Content Calendar","Social Media Planner","Marketing Planner","Product Planner","Project Tracker","Client Planner","Brain Dump","Business Goals"],
+    "Journals & Guided Pages": ["Journal Page","Lined Journal","Prompted Journal","Guided Reflection","Daily Reflection","Weekly Reflection","Monthly Reflection","Gratitude Journal","Prayer/Reflection Page","Workbook Page","Worksheet","Notes Page"],
+    "Planner Structure": ["Cover","Back Cover","Title Page","Dashboard","Section Divider","Section Cover","Index","Reference Page","Blank Page","Decorative Page"],
+    "Women's Health & Cycle": ["Period Tracker","Menstrual Cycle Tracker","Ovulation Tracker","Fertility Tracker","Fertile Window Tracker","Cycle Symptoms Tracker","PMS Tracker","Mood & Cycle Tracker","Period Pain / Cramp Tracker","Energy Level Tracker","Basal Body Temperature Tracker","Cervical Mucus Tracker","Pregnancy Planning Tracker","Pregnancy Journey Tracker","Prenatal Appointment Tracker","Postpartum Recovery Tracker","Postpartum Mood Tracker","Breastfeeding Tracker","Pumping Tracker","Baby Feeding Log","Baby Sleep Tracker","Baby Diaper Tracker","Medication / Supplement Tracker","Doctor Appointment Tracker","Women's Wellness Tracker"],
+    "Wellness & Lifestyle": ["Weight Loss","Fitness","Nutrition","Meal Planning","Water Tracking","Sleep","Mood","Self-Care","Wellness Goals","Habit Building","Walking Tracker","Workout Tracker","Progress Tracker","Measurements Tracker","Wellness Journal"]
+  },
+  components: ["Weekly Goals","Top Priorities","To-Do List","Appointments","Schedule","Meal Plan","Habit Tracker","Water Tracker","Cleaning","Errands","Notes","Gratitude","Self-Care","Budget","Content Ideas","Social Media Tasks","Affirmations","Reflection","Savings Goal","Debt Payoff","Brain Dump","Family Schedule","Custom Tracker"],
+  layouts: ["One Page","Two-Page Spread","Full Page","Half Page","Vertical","Horizontal","Grid","Columns","Boxes / Sections","Checklist Layout","Calendar Layout","Dashboard Layout","Timeline","Time Blocking","Lined","Dot Grid","Blank Space","Mixed Layout"],
+  aesthetics: ["Vintage","Retro","Y2K","Boujee / Glam","Luxury","Rhinestone","Barbie-inspired","Girly","Feminine","Coquette","Cottagecore","Boho","Minimalist","Modern","Elegant","Whimsical","Cute","Playful","Professional","Corporate","Moody","Dark Academia","Soft","Romantic","Rustic","Farmhouse","Tropical","Celestial","Botanical","Motivational","Streetwear","Afrocentric","Kids / Playful","Seasonal","Holiday"],
+  typography: ["Serif","Sans Serif","Script","Handwritten","Brush","Monogram","Display","Retro","Groovy","Bubble","Bold","Elegant","Playful","Typewriter","Gothic","Western","Minimal","Decorative","Mixed Typography"],
+  colors: ["Lavender","Amethyst","Lilac","Blush","Rose","Cream","White","Black","Deep Navy","Sage","Emerald","Sky Blue","Gold","Rose Gold","Silver","Brown","Neutral","Pastel","Earth Tones"],
+  decorative: ["Rhinestones","Glitter","Foil effect","Metallic accents","Sparkles","Stars","Hearts","Bows","Flowers","Butterflies","Pearls","Lace","Checkerboard","Animal print","Polka dots","Stripes","Plaid","Marble","Abstract shapes","Doodles","Frames","Borders","Stickers","Icons","Illustrations","Character elements","None"]
+};
+
+/* Cohesion maps for Smart Randomize / Creative Direction Lock */
+const AESTHETIC_FAMILIES = {
+  "Glam & Luxe": ["Boujee / Glam","Luxury","Rhinestone","Barbie-inspired","Elegant","Romantic","Soft"],
+  "Girly & Sweet": ["Girly","Feminine","Coquette","Cute","Whimsical","Playful","Kids / Playful"],
+  "Vintage & Retro": ["Vintage","Retro","Y2K"],
+  "Natural & Cottage": ["Cottagecore","Boho","Rustic","Farmhouse","Botanical","Tropical"],
+  "Clean & Modern": ["Minimalist","Modern","Professional","Corporate"],
+  "Moody & Academic": ["Moody","Dark Academia"],
+  "Celestial & Mystic": ["Celestial"],
+  "Bold & Cultural": ["Streetwear","Afrocentric"],
+  "Seasonal": ["Seasonal","Holiday"],
+  "Motivational": ["Motivational"]
+};
+const FAMILY_TYPOGRAPHY = {
+  "Glam & Luxe": ["Script","Elegant","Display","Bold"],
+  "Girly & Sweet": ["Handwritten","Script","Bubble","Playful"],
+  "Vintage & Retro": ["Retro","Groovy","Bold","Display"],
+  "Natural & Cottage": ["Handwritten","Serif","Minimal"],
+  "Clean & Modern": ["Sans Serif","Minimal","Bold"],
+  "Moody & Academic": ["Serif","Gothic","Typewriter"],
+  "Celestial & Mystic": ["Display","Decorative","Elegant"],
+  "Bold & Cultural": ["Bold","Display","Western"],
+  "Seasonal": ["Playful","Decorative","Handwritten"],
+  "Motivational": ["Bold","Sans Serif","Display"]
+};
+const FAMILY_COLORS = {
+  "Glam & Luxe": ["Blush","Rose","Rose Gold","Gold","Black","Cream"],
+  "Girly & Sweet": ["Blush","Pastel","Lavender","Lilac","White"],
+  "Vintage & Retro": ["Cream","Gold","Brown","Earth Tones"],
+  "Natural & Cottage": ["Sage","Earth Tones","Cream","Neutral"],
+  "Clean & Modern": ["White","Black","Deep Navy","Neutral","Silver"],
+  "Moody & Academic": ["Deep Navy","Black","Brown","Emerald"],
+  "Celestial & Mystic": ["Deep Navy","Lavender","Silver","Gold","Black"],
+  "Bold & Cultural": ["Gold","Black","Emerald","Brown"],
+  "Seasonal": ["Emerald","Gold","Cream","Rose"],
+  "Motivational": ["Sky Blue","Gold","White","Black"]
+};
+const FAMILY_DECOR = {
+  "Glam & Luxe": ["Rhinestones","Glitter","Foil effect","Metallic accents","Sparkles","Pearls"],
+  "Girly & Sweet": ["Hearts","Bows","Flowers","Polka dots","Stickers"],
+  "Vintage & Retro": ["Checkerboard","Stripes","Frames","Borders"],
+  "Natural & Cottage": ["Flowers","Butterflies","Doodles","Illustrations"],
+  "Clean & Modern": ["Borders","Frames","Abstract shapes","Icons"],
+  "Moody & Academic": ["Frames","Borders","Illustrations"],
+  "Celestial & Mystic": ["Stars","Sparkles","Abstract shapes"],
+  "Bold & Cultural": ["Animal print","Icons","Illustrations"],
+  "Seasonal": ["Stickers","Icons","Illustrations"],
+  "Motivational": ["Icons","Borders","Abstract shapes"]
+};
+
+const PLANNER_KEYWORD_COMPONENTS = [
+  {match:["budget","finance"], components:["Budget","Monthly Budget","Expense Log","Bill Tracker","Savings Goal","Debt Payoff","Financial Goals"]},
+  {match:["meal"], components:["Meal Plan","Grocery List","Family Schedule"]},
+  {match:["mom","home management"], components:["Family Schedule","Cleaning","Errands","Meal Plan"]},
+  {match:["business"], components:["Content Ideas","Brain Dump","Top Priorities","Notes"]},
+  {match:["content","social media"], components:["Content Ideas","Social Media Tasks","Brain Dump"]},
+  {match:["student","teacher"], components:["Schedule","To-Do List","Notes","Top Priorities"]},
+  {match:["wedding"], components:["Budget","To-Do List","Notes"]},
+  {match:["travel"], components:["Schedule","To-Do List","Budget","Notes"]},
+  {match:["project"], components:["Top Priorities","To-Do List","Notes"]},
+  {match:["journal","notebook"], components:["Gratitude","Reflection","Affirmations","Notes"]},
+  {match:["self-care","wellness"], components:["Self-Care","Gratitude","Habit Tracker","Water Tracker"]},
+  {match:["fitness"], components:["Habit Tracker","Water Tracker","Self-Care"]},
+  {match:["goal"], components:["Weekly Goals","Top Priorities","Reflection"]},
+  {match:["baby","postpartum","pregnan","breastfeed","pump","cycle","period","fertil","ovulat","pms"], components:["Family Schedule","Notes","Habit Tracker"]}
+];
+const DEFAULT_COMPONENTS = ["Weekly Goals","Top Priorities","To-Do List","Notes"];
+
+function purposeStatement(){
+  const t = ((state.plannerType||"")+" "+(state.plannerTypeCustom||"")).toLowerCase();
+  if(t.includes("budget")||t.includes("finance")) return "This planner should prioritize clear financial organization — income, expenses, savings, and debt payoff should be easy to log and scan at a glance.";
+  if(t.includes("meal")) return "This planner should prioritize meal planning, grocery organization, and a clean weekly food-and-schedule structure.";
+  if(t.includes("mom")||t.includes("home management")) return "This planner should prioritize household and family organization — schedules, chores, and errands should be easy to coordinate at a glance.";
+  if(t.includes("business")) return "This planner should prioritize goals, projects, content, and client organization suited to running a business.";
+  if(t.includes("content")||t.includes("social media")) return "This planner should prioritize content planning, scheduling, and idea capture for consistent posting.";
+  if(t.includes("student")) return "This planner should prioritize class schedules, assignments, and study organization with plenty of writing space.";
+  if(t.includes("teacher")) return "This planner should prioritize lesson planning, schedules, and classroom organization.";
+  if(t.includes("wedding")) return "This planner should prioritize wedding-planning tasks, budget tracking, and vendor/to-do organization.";
+  if(t.includes("travel")) return "This planner should prioritize itinerary structure, packing, and trip-budget organization.";
+  if(t.includes("project")) return "This planner should prioritize project milestones, task breakdowns, and priority tracking.";
+  if(t.includes("fitness")) return "This planner should prioritize workout tracking, habit-building, and visible progress over time.";
+  if(t.includes("self-care")||t.includes("wellness")) return "This planner should prioritize wellness tracking and gentle daily routines — mood, habits, water, and self-care.";
+  if(t.includes("goal")) return "This planner should prioritize goal breakdowns, action steps, and reflection on progress.";
+  if(t.includes("journal")||t.includes("workbook")||t.includes("notebook")) return "This planner should prioritize writing space, guided prompts, reflection, and readability over dense structure.";
+  return "This planner should prioritize clear daily/weekly organization, easy-to-scan sections, and comfortable writing space.";
+}
+function pickPreferredComponents(){
+  const t = ((state.plannerType||"")+" "+(state.plannerTypeCustom||"")).toLowerCase();
+  for(const rule of PLANNER_KEYWORD_COMPONENTS){ if(rule.match.some(k=>t.includes(k))) return rule.components; }
+  return DEFAULT_COMPONENTS;
+}
+
+/* ===================== STATE ===================== */
+function defaultState(){
+  return {
+    plannerType:"", plannerTypeCustom:"",
+    productFormat:"", productFormatCustom:"",
+    title:"", subtitle:"", sectionTitle:"", supportingText:"",
+    pageTypes:[], components:[], layout:[], aesthetic:[], typography:[], colors:[], decorative:[],
+    exclude:""
+  };
+}
+let state = defaultState();
+let versions = null; // {v1, v2}
+
+/* ===================== STORAGE HELPERS ===================== */
+const LS = {
+  get(key, fallback){ try{ const v = localStorage.getItem(key); return v? JSON.parse(v): fallback; }catch(e){ return fallback; } },
+  set(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+};
+function getSaved(){ return LS.get('dms_saved', []); }
+function setSaved(v){ LS.set('dms_saved', v); }
+function getHistory(){ return LS.get('dms_history', []); }
+function setHistory(v){ LS.set('dms_history', v); }
+
+/* ===================== UTIL ===================== */
+function el(tag, cls, text){ const e=document.createElement(tag); if(cls) e.className=cls; if(text!==undefined) e.textContent=text; return e; }
+function getExcludeTerms(){ return (state.exclude||"").split(/[,\n]/).map(s=>s.trim().toLowerCase()).filter(Boolean); }
+function isExcluded(value){ const ex=getExcludeTerms(); const v=(value||"").toLowerCase(); return ex.some(t=>t && v.includes(t)); }
+function pickRandom(arr, n){
+  const pool = arr.filter(x=>!isExcluded(x));
+  const out=[]; const copy=pool.slice();
+  while(out.length<n && copy.length){ const i=Math.floor(Math.random()*copy.length); out.push(copy.splice(i,1)[0]); }
+  return out;
+}
+function rotate(arr){ if(!arr || arr.length<2) return (arr||[]).slice(); return arr.slice(1).concat(arr[0]); }
+function listOr(arr, fallback){ return (arr && arr.length) ? arr.join(", ") : fallback; }
+function showToast(msg){
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(showToast._t); showToast._t = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* ===================== RENDER: FIELDS ===================== */
+function renderSingleSelect(containerId, options, key, customKey, placeholder){
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  const wrap = el('div','pill-group');
+  options.forEach(opt=>{
+    const active = state[key]===opt;
+    const b = el('button', 'pill'+(active?' active':''), opt);
+    b.type='button';
+    b.onclick = ()=>{ state[key]=opt; state[customKey]=''; render(); };
+    wrap.appendChild(b);
+  });
+  container.appendChild(wrap);
+  const row = el('div','custom-row');
+  const input = el('input','custom-input');
+  input.placeholder = placeholder || 'Custom value...';
+  input.value = state[customKey] || '';
+  input.oninput = ()=>{ state[customKey] = input.value; if(input.value) state[key]=''; renderSelections(); };
+  row.appendChild(input);
+  container.appendChild(row);
+}
+function renderMultiSelect(containerId, options, key, placeholder){
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  const wrap = el('div','pill-group');
+  const arr = state[key];
+  options.forEach(opt=>{
+    const active = arr.includes(opt);
+    const b = el('button','pill'+(active?' active':''), opt);
+    b.type='button';
+    b.onclick = ()=>{
+      let a = state[key].slice();
+      if(a.includes(opt)) a = a.filter(x=>x!==opt); else a.push(opt);
+      state[key]=a; render();
+    };
+    wrap.appendChild(b);
+  });
+  container.appendChild(wrap);
+  const row = el('div','custom-row');
+  const input = el('input','custom-input'); input.placeholder = placeholder || 'Add custom...';
+  const btn = el('button','add-btn','+ Add'); btn.type='button';
+  btn.onclick = ()=>{
+    const v = input.value.trim();
+    if(v){ const a = state[key].slice(); if(!a.includes(v)) a.push(v); state[key]=a; input.value=''; render(); }
+  };
+  row.appendChild(input); row.appendChild(btn);
+  container.appendChild(row);
+}
+function renderGroupedMultiSelect(containerId, groups, key){
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  Object.entries(groups).forEach(([groupName, options])=>{
+    container.appendChild(el('div','group-heading', groupName));
+    const wrap = el('div','pill-group');
+    const arr = state[key];
+    options.forEach(opt=>{
+      const active = arr.includes(opt);
+      const b = el('button','pill'+(active?' active':''), opt);
+      b.type='button';
+      b.onclick = ()=>{
+        let a = state[key].slice();
+        if(a.includes(opt)) a = a.filter(x=>x!==opt); else a.push(opt);
+        state[key]=a; render();
+      };
+      wrap.appendChild(b);
+    });
+    container.appendChild(wrap);
+  });
+  const row = el('div','custom-row');
+  const input = el('input','custom-input'); input.placeholder = 'Add a custom page/section type...';
+  const btn = el('button','add-btn','+ Add'); btn.type='button';
+  btn.onclick = ()=>{
+    const v = input.value.trim();
+    if(v){ const a = state[key].slice(); if(!a.includes(v)) a.push(v); state[key]=a; input.value=''; render(); }
+  };
+  row.appendChild(input); row.appendChild(btn);
+  container.appendChild(row);
+}
+
+/* ===================== RENDER: SELECTIONS PANEL ===================== */
+function renderSelections(){
+  const box = document.getElementById('your-selections');
+  box.innerHTML = '';
+  const pills = [];
+  if(state.plannerType||state.plannerTypeCustom) pills.push(state.plannerType||state.plannerTypeCustom);
+  if(state.productFormat||state.productFormatCustom) pills.push(state.productFormat||state.productFormatCustom);
+  if(state.title) pills.push('Title: '+state.title);
+  if(state.subtitle) pills.push('Subtitle: '+state.subtitle);
+  if(state.sectionTitle) pills.push('Section: '+state.sectionTitle);
+  ['pageTypes','components','layout','aesthetic','typography','colors','decorative'].forEach(k=>{
+    state[k].forEach(v=>pills.push(v));
+  });
+  if(pills.length===0){
+    box.appendChild(el('div','empty-note','Nothing selected yet — start building on the left, or hit Smart Randomize.'));
+  } else {
+    pills.forEach(p=> box.appendChild(el('span','sel-pill', p)));
+  }
+  const ex = getExcludeTerms();
+  if(ex.length){
+    ex.forEach(term => box.appendChild(el('span','sel-pill excl', term)));
+  }
+}
+
+/* ===================== SMART RANDOMIZE ===================== */
+function smartRandomize(){
+  if(!state.plannerType && !state.plannerTypeCustom){
+    state.plannerType = pickRandom(DATA.plannerTypes,1)[0] || DATA.plannerTypes[0];
+  }
+  if(!state.productFormat && !state.productFormatCustom){
+    state.productFormat = pickRandom(DATA.productFormats,1)[0] || DATA.productFormats[0];
+  }
+  const preferred = pickPreferredComponents().filter(c=>!isExcluded(c));
+  let pageTypes = state.pageTypes.slice();
+  preferred.forEach(c=>{ if(pageTypes.length<8 && !pageTypes.includes(c)) pageTypes.push(c); });
+  if(pageTypes.length<3){
+    const allPages = Object.values(DATA.pageGroups).flat();
+    pickRandom(allPages, 3-pageTypes.length).forEach(c=>{ if(!pageTypes.includes(c)) pageTypes.push(c); });
+  }
+  state.pageTypes = pageTypes;
+
+  if(state.components.length===0){ state.components = pickRandom(DATA.components,4); }
+
+  let family = null;
+  if(state.aesthetic.length){
+    for(const [fam,list] of Object.entries(AESTHETIC_FAMILIES)){ if(list.includes(state.aesthetic[0])){ family=fam; break; } }
+  }
+  if(!family){ family = pickRandom(Object.keys(AESTHETIC_FAMILIES),1)[0]; }
+  const famAes = AESTHETIC_FAMILIES[family].filter(a=>!isExcluded(a));
+
+  if(state.aesthetic.length===0) state.aesthetic = pickRandom(famAes, Math.min(2, famAes.length||1));
+  if(state.typography.length===0) state.typography = pickRandom(FAMILY_TYPOGRAPHY[family]||DATA.typography, 2);
+  if(state.colors.length===0) state.colors = pickRandom(FAMILY_COLORS[family]||DATA.colors, 3);
+  if(state.decorative.length===0) state.decorative = pickRandom(FAMILY_DECOR[family]||DATA.decorative, 3);
+  if(state.layout.length===0) state.layout = pickRandom(DATA.layouts, 2);
+
+  render();
+  showToast('✦ Smart Randomize created a cohesive concept');
+}
+
+/* ===================== BLUEPRINT GENERATION ===================== */
+function buildBlueprint(versionLabel, variant){
+  const title = state.title || '(Untitled Planner)';
+  const plannerType = state.plannerType || state.plannerTypeCustom || '(not specified)';
+  const format = state.productFormat || state.productFormatCustom || '(not specified)';
+  const pageTypes = listOr(state.pageTypes, '(none specified)');
+  const sections = listOr(state.components, '(none specified)');
+  let layout = state.layout.slice(), typo = state.typography.slice(), colors = state.colors.slice(), decor = state.decorative.slice();
+  if(variant==='v2'){ layout = rotate(layout); typo = rotate(typo); colors = rotate(colors); decor = rotate(decor); }
+
+  const fLower = format.toLowerCase();
+  let printDigitalNote = '';
+  if(fLower.includes('digital')) printDigitalNote += 'Design with tappable hyperlink zones and legible on-screen contrast in mind. ';
+  if(fLower.includes('print') || fLower === '(not specified)') printDigitalNote += 'Keep a safe margin for print bleed and ensure lines/boxes remain crisp at standard print resolution.';
+
+  const lines = [];
+  lines.push(`VERSION ${versionLabel}`);
+  lines.push('='.repeat(40));
+  lines.push('');
+  lines.push(`TITLE: ${title}`);
+  if(state.subtitle) lines.push(`SUBTITLE: ${state.subtitle}`);
+  if(state.sectionTitle) lines.push(`SECTION TITLE: ${state.sectionTitle}`);
+  if(state.supportingText) lines.push(`INSTRUCTIONS / SUPPORTING TEXT: ${state.supportingText}`);
+  lines.push('');
+  lines.push(`PLANNER TYPE: ${plannerType}`);
+  lines.push(`PRODUCT FORMAT: ${format}`);
+  lines.push('');
+  lines.push('PURPOSE & DIRECTION:');
+  lines.push(purposeStatement() + (variant==='v2' ? ' This alternate version keeps the same creative direction while shifting composition and emphasis for a fresh option.' : ''));
+  lines.push('');
+  lines.push('PAGE / SECTION TYPES INCLUDED:');
+  lines.push(pageTypes);
+  lines.push('');
+  lines.push('PLANNER SECTIONS / COMPONENTS:');
+  lines.push(sections);
+  lines.push('');
+  lines.push('LAYOUT & COMPOSITION:');
+  lines.push(listOr(layout,'Balanced single-page layout') + (variant==='v2' && layout.length ? ` — lead with ${layout[0]} and let secondary sections support it.` : ' — organize sections in a clear top-to-bottom hierarchy with generous spacing.'));
+  lines.push('');
+  lines.push('VISUAL STYLE / AESTHETIC:');
+  lines.push(listOr(state.aesthetic,'Clean and polished'));
+  lines.push('');
+  lines.push('TYPOGRAPHY:');
+  lines.push(listOr(typo,'Clean, legible pairing') + ' — headers in the boldest/most decorative style selected, body text in the most legible style selected.');
+  lines.push('');
+  lines.push('COLOR PALETTE:');
+  lines.push(listOr(colors,'Soft neutral palette') + (variant==='v2' && colors.length>1 ? ` (emphasize ${colors[0]} as the lead tone for this version)` : ''));
+  lines.push('');
+  lines.push('DECORATIVE ELEMENTS:');
+  lines.push(listOr(decor,'Minimal, tasteful accents'));
+  lines.push('');
+  lines.push('COMPOSITION & HIERARCHY:');
+  lines.push('Titles should be the largest visual element, section headers clearly differentiated from body content, and writing/tracking areas given enough open space to remain usable. Maintain consistent alignment and margins throughout.');
+  lines.push('');
+  if(printDigitalNote.trim()){ lines.push('PRINT & DIGITAL CONSIDERATIONS:'); lines.push(printDigitalNote.trim()); lines.push(''); }
+  lines.push('USABILITY & ORGANIZATION:');
+  lines.push('Every included section should be easy to find and fill in quickly; avoid crowding decorative elements into functional writing space.');
+  if(state.exclude){ lines.push(''); lines.push('EXCLUDED: Do not use — ' + state.exclude.replace(/\n/g,', ')); }
+  lines.push('');
+  lines.push('VERSION NOTE:');
+  lines.push(variant==='v2'
+    ? 'Version 2 keeps the same planner purpose, title, content, aesthetic family, palette, and exclusions as Version 1 — only layout emphasis, typography pairing order, color emphasis, and decorative placement vary.'
+    : 'This is the primary interpretation of the selections above.');
+  return lines.join('\n');
+}
+
+function generatePrompt(){
+  if(!state.title || !state.title.trim()){
+    showToast('Add a Title first — it is required.');
+    document.getElementById('field-title').focus();
+    return;
+  }
+  versions = { v1: buildBlueprint('1','v1'), v2: buildBlueprint('2','v2') };
+  renderOutput();
+  pushHistory();
+  showToast('Generated Version 1 & Version 2');
+}
+
+function pushHistory(){
+  const list = getHistory();
+  list.unshift({
+    id: 'h_'+Date.now(),
+    timestamp: new Date().toISOString(),
+    title: state.title || '(Untitled)',
+    state: JSON.parse(JSON.stringify(state)),
+    v1: versions.v1, v2: versions.v2
+  });
+  setHistory(list.slice(0,200));
+}
+
+function saveConcept(versionKey, favorite){
+  if(!versions) return;
+  const saved = getSaved();
+  const existing = saved.find(s=>s.title===state.title && s.version===versionKey && s._sessionId===currentGenId);
+  if(existing){
+    existing.favorite = favorite ? true : existing.favorite;
+    existing.saved = true;
+  } else {
+    saved.unshift({
+      id: 's_'+Date.now()+'_'+versionKey,
+      _sessionId: currentGenId,
+      timestamp: new Date().toISOString(),
+      title: state.title || '(Untitled)',
+      version: versionKey,
+      text: versions[versionKey],
+      favorite: !!favorite,
+      saved: true,
+      state: JSON.parse(JSON.stringify(state))
+    });
+  }
+  setSaved(saved);
+  showToast(favorite ? '★ Favorited' : 'Saved');
+  renderOutput();
+}
+
+let currentGenId = null;
+
+function renderOutput(){
+  const box = document.getElementById('generated-output');
+  box.innerHTML = '';
+  if(!versions){
+    box.appendChild(el('div','empty-note','Fill in a title and hit Generate Prompt (or Smart Randomize first) to create Version 1 and Version 2.'));
+    return;
+  }
+  if(!currentGenId) currentGenId = 'g_'+Date.now();
+  ['v1','v2'].forEach((vk,idx)=>{
+    const saved = getSaved();
+    const entry = saved.find(s=>s._sessionId===currentGenId && s.version===vk);
+    const block = el('div','version-block');
+    block.appendChild(el('h4', null, 'Version '+(idx+1)));
+    const pre = el('pre', null, versions[vk]);
+    block.appendChild(pre);
+    const actions = el('div','version-actions');
+    const copyBtn = el('button', null, 'Copy Prompt');
+    copyBtn.onclick = ()=>{ navigator.clipboard.writeText(versions[vk]).then(()=>showToast('Copied Version '+(idx+1))); };
+    const saveBtn = el('button', null, entry && entry.saved ? '✓ Saved' : 'Save');
+    saveBtn.onclick = ()=> saveConcept(vk, entry ? entry.favorite : false);
+    const favBtn = el('button', 'fav'+(entry && entry.favorite ? ' is-fav':''), entry && entry.favorite ? '★ Favorited' : '☆ Favorite');
+    favBtn.onclick = ()=> saveConcept(vk, true);
+    actions.appendChild(copyBtn); actions.appendChild(saveBtn); actions.appendChild(favBtn);
+    block.appendChild(actions);
+    box.appendChild(block);
+  });
+}
+
+/* ===================== VIEWS: SAVED / HISTORY ===================== */
+function renderSavedView(){
+  const box = document.getElementById('saved-list');
+  box.innerHTML = '';
+  const saved = getSaved();
+  if(saved.length===0){ box.appendChild(el('div','empty-note','Nothing saved or favorited yet.')); return; }
+  saved.forEach(item=>{
+    const row = el('div','list-item');
+    const left = el('div');
+    const titleSpan = el('span', null, (item.title||'(Untitled)') + ' — Version ' + (item.version==='v1'?'1':'2'));
+    left.appendChild(titleSpan);
+    if(item.favorite) left.appendChild(el('span','badge-fav','★ Favorite'));
+    left.appendChild(el('div','meta', new Date(item.timestamp).toLocaleString()));
+    const actions = el('div','actions');
+    const copyBtn = el('button', null, 'Copy');
+    copyBtn.onclick = ()=> navigator.clipboard.writeText(item.text).then(()=>showToast('Copied'));
+    const openBtn = el('button', null, 'Open in Studio');
+    openBtn.onclick = ()=>{ restoreState(item.state); location.hash = '#studio'; };
+    actions.appendChild(copyBtn); actions.appendChild(openBtn);
+    row.appendChild(left); row.appendChild(actions);
+    box.appendChild(row);
+  });
+}
+function renderHistoryView(){
+  const box = document.getElementById('history-list');
+  box.innerHTML = '';
+  const hist = getHistory();
+  if(hist.length===0){ box.appendChild(el('div','empty-note','No concepts generated yet.')); return; }
+  hist.forEach(item=>{
+    const row = el('div','list-item');
+    const left = el('div');
+    left.appendChild(el('span', null, item.title || '(Untitled)'));
+    left.appendChild(el('div','meta', new Date(item.timestamp).toLocaleString()));
+    const actions = el('div','actions');
+    const openBtn = el('button', null, 'Open Concept');
+    openBtn.onclick = ()=>{
+      restoreState(item.state);
+      versions = { v1:item.v1, v2:item.v2 };
+      currentGenId = null;
+      location.hash = '#studio';
+    };
+    actions.appendChild(openBtn);
+    row.appendChild(left); row.appendChild(actions);
+    box.appendChild(row);
+  });
+}
+function restoreState(s){
+  state = JSON.parse(JSON.stringify(s));
+  render();
+}
+
+/* ===================== RESET ===================== */
+function resetStudio(){
+  state = defaultState();
+  versions = null;
+  currentGenId = null;
+  render();
+  showToast('Studio reset');
+}
+
+/* ===================== TOP-LEVEL RENDER ===================== */
+function render(){
+  renderSingleSelect('field-plannerType', DATA.plannerTypes, 'plannerType', 'plannerTypeCustom', 'Custom planner type...');
+  renderSingleSelect('field-productFormat', DATA.productFormats, 'productFormat', 'productFormatCustom', 'Custom product format...');
+  document.getElementById('field-title').value = state.title;
+  document.getElementById('field-subtitle').value = state.subtitle;
+  document.getElementById('field-sectionTitle').value = state.sectionTitle;
+  document.getElementById('field-supportingText').value = state.supportingText;
+  renderGroupedMultiSelect('field-pageTypes', DATA.pageGroups, 'pageTypes');
+  renderMultiSelect('field-components', DATA.components, 'components', 'Add custom section/component...');
+  renderMultiSelect('field-layout', DATA.layouts, 'layout', 'Add custom layout...');
+  renderMultiSelect('field-aesthetic', DATA.aesthetics, 'aesthetic', 'Add custom aesthetic...');
+  renderMultiSelect('field-typography', DATA.typography, 'typography', 'Add custom typography...');
+  renderMultiSelect('field-colors', DATA.colors, 'colors', 'Add custom color...');
+  renderMultiSelect('field-decorative', DATA.decorative, 'decorative', 'Add custom decorative element...');
+  document.getElementById('field-exclude').value = state.exclude;
+  renderSelections();
+  renderOutput();
+}
+
+/* ===================== EVENTS ===================== */
+document.getElementById('field-title').addEventListener('input', e=>{ state.title = e.target.value; renderSelections(); });
+document.getElementById('field-subtitle').addEventListener('input', e=>{ state.subtitle = e.target.value; renderSelections(); });
+document.getElementById('field-sectionTitle').addEventListener('input', e=>{ state.sectionTitle = e.target.value; renderSelections(); });
+document.getElementById('field-supportingText').addEventListener('input', e=>{ state.supportingText = e.target.value; });
+document.getElementById('field-exclude').addEventListener('input', e=>{ state.exclude = e.target.value; renderSelections(); });
+
+document.getElementById('reset-btn').addEventListener('click', resetStudio);
+document.getElementById('randomize-btn').addEventListener('click', smartRandomize);
+document.getElementById('generate-btn').addEventListener('click', generatePrompt);
+
+document.querySelectorAll('.top-nav a[data-view]').forEach(a=>{
+  a.addEventListener('click', e=>{ e.preventDefault(); location.hash = '#'+a.dataset.view; });
+});
+document.getElementById('signout-btn').addEventListener('click', e=>{
+  e.preventDefault();
+  sessionStorage.removeItem('dms_signed_in');
+  showLock();
+});
+
+/* ===================== ROUTING ===================== */
+function renderView(){
+  const v = (location.hash || '#studio').replace('#','');
+  document.querySelectorAll('.top-nav a[data-view]').forEach(a=> a.classList.toggle('active', a.dataset.view===v));
+  document.getElementById('view-studio').hidden = v!=='studio';
+  document.getElementById('view-saved').hidden = v!=='saved';
+  document.getElementById('view-history').hidden = v!=='history';
+  if(v==='saved') renderSavedView();
+  if(v==='history') renderHistoryView();
+}
+window.addEventListener('hashchange', renderView);
+
+/* ===================== ACCESS LOCK (demo placeholder) ===================== */
+function showLock(){ document.getElementById('lock-overlay').hidden = false; }
+function hideLock(){ document.getElementById('lock-overlay').hidden = true; }
+document.getElementById('access-unlock-btn').addEventListener('click', ()=>{
+  const code = document.getElementById('access-code-input').value.trim();
+  if(code){ sessionStorage.setItem('dms_signed_in','1'); hideLock(); }
+  else showToast('Enter an access code to continue');
+});
+document.getElementById('access-code-input').addEventListener('keydown', e=>{
+  if(e.key==='Enter') document.getElementById('access-unlock-btn').click();
+});
+
+/* ===================== INIT ===================== */
+if(!sessionStorage.getItem('dms_signed_in')) showLock();
+if(!location.hash) location.hash = '#studio';
+render();
+renderView();
+</script>
+</body>
+</html>
