@@ -161,16 +161,6 @@
 </head>
 <body>
 
-<div id="lock-overlay" hidden>
-  <div class="lock-card">
-    <h2>✨ Digital Muse Studio</h2>
-    <p>Enter your private customer access code to open the Planner Creation Studio.</p>
-    <input id="access-code-input" type="text" placeholder="Access code" />
-    <button id="access-unlock-btn">Open Planner Creation Studio</button>
-    <div class="lock-note">Demo build: any code unlocks the Studio. In production this checks a permanent, unique access code issued after checkout and stored in Supabase.</div>
-  </div>
-</div>
-
 <div class="wrap">
   <header class="header-card">
     <div class="titles">
@@ -181,7 +171,6 @@
       <a data-view="studio" href="#studio">Studio</a>
       <a data-view="saved" href="#saved">Saved &amp; Favorites</a>
       <a data-view="history" href="#history">History</a>
-      <a class="signout" id="signout-btn" href="#">Sign Out</a>
     </nav>
   </header>
 
@@ -824,11 +813,6 @@ document.getElementById('generate-btn').addEventListener('click', generatePrompt
 document.querySelectorAll('.top-nav a[data-view]').forEach(a=>{
   a.addEventListener('click', e=>{ e.preventDefault(); location.hash = '#'+a.dataset.view; });
 });
-document.getElementById('signout-btn').addEventListener('click', e=>{
-  e.preventDefault();
-  safeSessionRemove('dms_signed_in');
-  showLock();
-});
 
 /* ===================== ROUTING ===================== */
 function renderView(){
@@ -842,28 +826,7 @@ function renderView(){
 }
 window.addEventListener('hashchange', renderView);
 
-/* ===================== ACCESS LOCK (demo placeholder) ===================== */
-/* Some browsers (private/incognito modes, strict cookie-blocking settings) throw
-   when sessionStorage is touched. These wrappers make sure a storage failure
-   never stops the unlock button from working — it just won't "remember" past a refresh. */
-let _memSignedIn = false;
-function safeSessionGet(key){ try{ return sessionStorage.getItem(key); }catch(e){ return key==='dms_signed_in' ? (_memSignedIn?'1':null) : null; } }
-function safeSessionSet(key,val){ try{ sessionStorage.setItem(key,val); }catch(e){} if(key==='dms_signed_in') _memSignedIn = true; }
-function safeSessionRemove(key){ try{ sessionStorage.removeItem(key); }catch(e){} if(key==='dms_signed_in') _memSignedIn = false; }
-
-function showLock(){ document.getElementById('lock-overlay').hidden = false; }
-function hideLock(){ document.getElementById('lock-overlay').hidden = true; }
-document.getElementById('access-unlock-btn').addEventListener('click', ()=>{
-  const code = document.getElementById('access-code-input').value.trim();
-  if(code){ safeSessionSet('dms_signed_in','1'); hideLock(); }
-  else showToast('Enter an access code to continue');
-});
-document.getElementById('access-code-input').addEventListener('keydown', e=>{
-  if(e.key==='Enter'){ e.preventDefault(); document.getElementById('access-unlock-btn').click(); }
-});
-
 /* ===================== INIT ===================== */
-if(!safeSessionGet('dms_signed_in')) showLock();
 if(!location.hash) location.hash = '#studio';
 render();
 renderView();
