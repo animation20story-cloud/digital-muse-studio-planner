@@ -28,6 +28,7 @@
     color:var(--ink);
     min-height:100vh;
   }
+  #lock-overlay[hidden]{display:none !important;}
   #lock-overlay{
     position:fixed;inset:0;background:linear-gradient(160deg,var(--plum),var(--amethyst));
     display:flex;align-items:center;justify-content:center;z-index:999;padding:20px;
@@ -157,9 +158,65 @@
   }
   .toast.show{opacity:1;}
   .req{color:#a13b3b;font-size:12px;margin-left:6px;}
+
+  /* ===== DIGITAL MUSE SMART CREATION ENGINE ===== */
+  .smart-create{background:linear-gradient(135deg,#fff 0%,#faf5ff 100%);border:1px solid var(--line);position:relative;overflow:hidden}
+  .smart-create:before{content:'✦';position:absolute;right:22px;top:14px;color:var(--gold);font-size:28px;opacity:.55}
+  .smart-badge{display:inline-flex;align-items:center;gap:6px;background:var(--lavender);color:var(--plum);padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700;margin-bottom:9px}
+  .smart-create h3{font-size:18px}
+  .smart-create .sub{max-width:760px;line-height:1.5}
+  .describe-box{min-height:125px!important;background:#fff!important;border:1px solid #d9c9e9!important;font-size:14px!important;line-height:1.55!important}
+  .smart-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+  .smart-actions button{padding:10px 15px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--plum);font-weight:700;cursor:pointer}
+  .smart-actions .primary-smart{background:linear-gradient(120deg,var(--amethyst),var(--plum));color:#fff;border:none}
+  .smart-actions .random-smart{background:linear-gradient(120deg,#e8cf94,var(--gold));border:none}
+  .smart-hint{font-size:11.5px;color:#8a7a9c;margin-top:8px}
+  .design-intel{margin-top:12px;padding:12px 14px;background:#fff;border:1px dashed var(--lilac);border-radius:12px;display:none}
+  .design-intel.show{display:block}
+  .design-intel strong{color:var(--plum)}
+  .improve-box{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .improve-box textarea{min-height:74px;background:#fff}
+  .improve-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+  .improve-actions button{padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--amethyst);font-size:12px;font-weight:650;cursor:pointer}
 </style>
 </head>
 <body>
+
+<div id="lock-overlay" hidden>
+  <div class="lock-card">
+    <h2>✨ Digital Muse Studio</h2>
+    <p>Enter your private customer access code to open the Planner Creation Studio.</p>
+    <input id="access-code-input" type="text" placeholder="Access code" />
+    <button id="access-unlock-btn" type="button" onclick="return window.dmsDemoUnlock ? window.dmsDemoUnlock() : false;">Open Planner Creation Studio</button>
+    <div class="lock-note">Demo build: any code unlocks the Studio. In production this checks a permanent, unique access code issued after checkout and stored in Supabase.</div>
+  </div>
+</div>
+
+<script>
+/* Minimal demo unlock: intentionally independent of the rest of the Studio app.
+   Until the backend is connected, any non-blank code opens the Studio. */
+(function(){
+  const overlay = document.getElementById('lock-overlay');
+  const input = document.getElementById('access-code-input');
+  const button = document.getElementById('access-unlock-btn');
+  function unlockDemo(){
+    const code = (input && input.value ? input.value : '').trim();
+    if(!code){
+      if(input) input.focus();
+      return false;
+    }
+    try { sessionStorage.setItem('dms_signed_in','1'); } catch(e) {}
+    if(overlay) overlay.hidden = true;
+    if(input) input.value = '';
+    return false;
+  }
+  window.dmsDemoUnlock = unlockDemo;
+  if(button) button.addEventListener('click', unlockDemo);
+  if(input) input.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); unlockDemo(); }
+  });
+})();
+</script>
 
 <div class="wrap">
   <header class="header-card">
@@ -171,6 +228,7 @@
       <a data-view="studio" href="#studio">Studio</a>
       <a data-view="saved" href="#saved">Saved &amp; Favorites</a>
       <a data-view="history" href="#history">History</a>
+      <a class="signout" id="signout-btn" href="#">Sign Out</a>
     </nav>
   </header>
 
@@ -185,6 +243,19 @@
     <div class="studio-grid">
       <!-- LEFT: BUILDER -->
       <div>
+
+        <div class="card smart-create">
+          <div class="smart-badge">✦ SMART CREATIVE ENGINE</div>
+          <h3>Describe What You Want</h3>
+          <div class="sub">Don't know which buttons to choose? Just explain your idea naturally. Muse will translate it into planner structure, layout, visual direction, and design rules.</div>
+          <textarea id="smart-brief" class="describe-box" placeholder="Example: I want a cute pink daily planner for busy women with cherries and bows. Include a schedule, top 3 priorities, meals, water, gratitude, self-care and notes. Make it feminine, polished and spacious."></textarea>
+          <div class="smart-actions">
+            <button id="smart-describe-btn" class="primary-smart" type="button">✨ Create From My Description</button>
+            <button id="smart-surprise-btn" class="random-smart" type="button">🎲 Surprise Me</button>
+          </div>
+          <div class="smart-hint">You can be specific, vague, or somewhere in between. Muse fills in the design logic for you.</div>
+          <div id="design-intel" class="design-intel"></div>
+        </div>
         <div class="card">
           <h3>1. What are you creating?</h3>
           <div class="sub">Planner type &amp; product format</div>
@@ -252,6 +323,18 @@
         <div class="card">
           <h3>Generated Prompts</h3>
           <div id="generated-output"></div>
+          <div id="improve-area" class="improve-box" hidden>
+            <label class="field-label">✨ Make It Better</label>
+            <textarea id="improve-text" placeholder="Tell Muse what you want changed… e.g. Make the schedule bigger, remove the flowers, and give me more writing space."></textarea>
+            <div class="improve-actions">
+              <button type="button" data-improve="spacious">More writing space</button>
+              <button type="button" data-improve="elegant">More elegant</button>
+              <button type="button" data-improve="decorative">More decorative</button>
+              <button type="button" data-improve="minimal">Cleaner / simpler</button>
+              <button type="button" data-improve="layout">Try a different layout</button>
+              <button type="button" id="apply-improvement" class="primary-smart">Apply Change</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -807,11 +890,16 @@ document.getElementById('field-supportingText').addEventListener('input', e=>{ s
 document.getElementById('field-exclude').addEventListener('input', e=>{ state.exclude = e.target.value; renderSelections(); });
 
 document.getElementById('reset-btn').addEventListener('click', resetStudio);
-document.getElementById('randomize-btn').addEventListener('click', smartRandomize);
-document.getElementById('generate-btn').addEventListener('click', generatePrompt);
+document.getElementById('randomize-btn').addEventListener('click', ()=>window.smartRandomize());
+document.getElementById('generate-btn').addEventListener('click', ()=>window.generatePrompt());
 
 document.querySelectorAll('.top-nav a[data-view]').forEach(a=>{
   a.addEventListener('click', e=>{ e.preventDefault(); location.hash = '#'+a.dataset.view; });
+});
+document.getElementById('signout-btn').addEventListener('click', e=>{
+  e.preventDefault();
+  safeSessionRemove('dms_signed_in');
+  showLock();
 });
 
 /* ===================== ROUTING ===================== */
@@ -826,10 +914,259 @@ function renderView(){
 }
 window.addEventListener('hashchange', renderView);
 
+/* ===================== ACCESS LOCK ===================== */
+/*
+  Demo behavior: any non-empty access code opens the Studio.
+  Production behavior: replace isValidAccessCode() with real
+  server-side/Supabase verification. Never put a secret customer
+  code directly in this HTML/JavaScript.
+*/
+let _memSignedIn = false;
+
+function safeSessionGet(key){
+  try { return sessionStorage.getItem(key); }
+  catch(e) { return key === 'dms_signed_in' && _memSignedIn ? '1' : null; }
+}
+
+function safeSessionSet(key, val){
+  try { sessionStorage.setItem(key, val); } catch(e) {}
+  if(key === 'dms_signed_in') _memSignedIn = true;
+}
+
+function safeSessionRemove(key){
+  try { sessionStorage.removeItem(key); } catch(e) {}
+  if(key === 'dms_signed_in') _memSignedIn = false;
+}
+
+function showLock(){
+  const overlay = document.getElementById('lock-overlay');
+  if(overlay) overlay.hidden = false;
+}
+
+function hideLock(){
+  const overlay = document.getElementById('lock-overlay');
+  if(overlay) overlay.hidden = true;
+}
+
+function isValidAccessCode(code){
+  return typeof code === 'string' && code.trim().length > 0;
+}
+
+function attemptUnlock(){
+  const input = document.getElementById('access-code-input');
+  if(!input) return;
+
+  const code = input.value.trim();
+
+  if(!code){
+    showToast('Enter an access code to continue');
+    input.focus();
+    return;
+  }
+
+  if(!isValidAccessCode(code)){
+    showToast('Invalid access code');
+    input.focus();
+    return;
+  }
+
+  safeSessionSet('dms_signed_in','1');
+  hideLock();
+  input.value = '';
+  showToast('Studio unlocked');
+}
+
+const unlockBtn = document.getElementById('access-unlock-btn');
+const accessInput = document.getElementById('access-code-input');
+
+if(unlockBtn) unlockBtn.addEventListener('click', attemptUnlock);
+
+if(accessInput){
+  accessInput.addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      attemptUnlock();
+    }
+  });
+}
+
 /* ===================== INIT ===================== */
-if(!location.hash) location.hash = '#studio';
-render();
-renderView();
+(function init(){
+  try{
+    if(!safeSessionGet('dms_signed_in')) showLock();
+    if(!location.hash) location.hash = '#studio';
+    render();
+    renderView();
+  }catch(err){
+    console.error('Digital Muse Studio initialization error:', err);
+    showLock();
+    showToast('The Studio could not finish loading. Please refresh the page.');
+  }
+})();
+</script>
+
+<script>
+/* ===== SMART CREATION ENGINE v2 ===== */
+(function(){
+  const brief = document.getElementById('smart-brief');
+  const intel = document.getElementById('design-intel');
+  const improveArea = document.getElementById('improve-area');
+  const improveText = document.getElementById('improve-text');
+  if(!brief) return;
+
+  const allPages = Object.values(DATA.pageGroups).flat();
+  const uniq = a => [...new Set(a)];
+  const excluded = () => getExcludeTerms();
+  const notExcluded = x => !excluded().some(e => x.toLowerCase().includes(e.toLowerCase()));
+  const add = (key, vals) => { state[key] = uniq([...(state[key]||[]), ...vals.filter(notExcluded)]); };
+  const has = (text, words) => words.some(w => text.includes(w));
+
+  function chooseFamily(text){
+    if(has(text,['coquette','bow','cherry','girly','cute','feminine','pink','barbie','romantic'])) return 'Girly & Sweet';
+    if(has(text,['luxury','luxe','glam','boujee','rhinestone','expensive','rich'])) return 'Glam & Luxe';
+    if(has(text,['vintage','retro','y2k','2000'])) return 'Vintage & Retro';
+    if(has(text,['cottage','cottagecore','boho','rustic','farmhouse','floral','botanical'])) return 'Natural & Cottage';
+    if(has(text,['minimal','clean','modern','simple','professional','corporate'])) return 'Clean & Modern';
+    if(has(text,['moody','dark academia','academic'])) return 'Moody & Academic';
+    if(has(text,['celestial','stars','moon','mystic'])) return 'Celestial & Mystic';
+    if(has(text,['streetwear','bold cultural','afrocentric'])) return 'Bold & Cultural';
+    if(has(text,['holiday','christmas','seasonal','fall','summer','spring','winter'])) return 'Seasonal';
+    return null;
+  }
+  function inferPlanner(text){
+    const map=[
+      [['daily','day-to-day','every day'],'Daily Planner'],[['weekly','week','weekly reset'],'Weekly Planner'],[['monthly','month'],'Monthly Planner'],[['yearly','year-at-a-glance'],'Yearly Planner'],
+      [['budget','finance','money','expenses','bills'],'Budget Planner'],[['meal','meals','food','grocery'],'Meal Planner'],[['fitness','workout','gym'],'Fitness Planner'],[['self-care','self care','wellness'],'Self-Care Planner'],
+      [['mom','mother','kids','family','children'],'Mom Planner'],[['home management','household','cleaning'],'Home Management Planner'],[['business','client','clients'],'Business Planner'],
+      [['content','social media','instagram','tiktok','posting'],'Content Planner'],[['student','school','classes','study'],'Student Planner'],[['teacher','classroom','lesson'],'Teacher Planner'],
+      [['wedding','bride'],'Wedding Planner'],[['travel','trip','vacation'],'Travel Planner'],[['project','project management'],'Project Planner'],[['journal','journaling','reflection'],'Journal'],[['workbook'],'Workbook']
+    ];
+    for(const [words,val] of map) if(has(text,words)) return val;
+    return '';
+  }
+  function inferComponents(text){
+    const out=[];
+    const rules=[
+      [['schedule','hourly','time block','appointments'],['Schedule','Appointments','Time Blocking']],
+      [['priority','top 3','priorities'],['Top Priorities']],
+      [['to-do','todo','tasks','task list'],['To-Do List']],
+      [['meal','meals','breakfast','lunch','dinner'],['Meal Plan']],
+      [['water','hydration'],['Water Tracker']],
+      [['gratitude','grateful'],['Gratitude']],
+      [['self-care','self care','me time'],['Self-Care']],
+      [['habit','habits','routine'],['Habit Tracker']],
+      [['money','budget','expenses','bills','cash flow'],['Budget','Expense Log','Bill Tracker']],
+      [['savings','save money'],['Savings Goal']],
+      [['goals','goal'],['Weekly Goals','Goal Breakdown']],
+      [['notes','writing space','notes section'],['Notes']],
+      [['meal','grocery','shopping'],['Grocery List']],
+      [['cleaning','chores'],['Cleaning']],
+      [['family','kids','children'],['Family Schedule']],
+      [['affirmation','affirmations'],['Affirmations']],
+      [['reflection','reflect'],['Reflection']],
+      [['brain dump','brainstorm'],['Brain Dump']]
+    ];
+    for(const [words,vals] of rules) if(has(text,words)) out.push(...vals);
+    return uniq(out).filter(notExcluded);
+  }
+  function inferPageTypes(text){
+    const out=[];
+    const rules=[
+      [['daily','daily planner'],['Daily Planner']], [['weekly','weekly planner','weekly reset'],['Weekly Planner']], [['monthly','monthly planner'],['Monthly Planner']],
+      [['schedule','hourly','time block'],['Schedule','Time Blocking']], [['todo','to-do','tasks'],['To-Do List']], [['gratitude'],['Gratitude Page']],
+      [['self-care','self care'],['Self-Care Page']], [['habit'],['Habit Tracker']], [['water','hydration'],['Water Tracker']], [['budget','money'],['Budget','Expense Log']],
+      [['meal'],['Meal Planner']], [['goals','goal'],['Goals Page','Goal Breakdown']], [['notes'],['Notes Page']]
+    ];
+    for(const [words,vals] of rules) if(has(text,words)) out.push(...vals);
+    return uniq(out).filter(notExcluded);
+  }
+  function inferColors(text,fam){
+    if(has(text,['pink','blush','rose'])) return ['Blush','Rose','Cream','White'].filter(notExcluded);
+    if(has(text,['purple','lavender','lilac'])) return ['Lavender','Lilac','Cream','White'].filter(notExcluded);
+    if(has(text,['blue','navy'])) return ['Sky Blue','Deep Navy','White','Silver'].filter(notExcluded);
+    if(has(text,['green','sage'])) return ['Sage','Cream','Neutral','Gold'].filter(notExcluded);
+    if(has(text,['black','luxury','dark'])) return ['Black','Gold','Cream','Rose Gold'].filter(notExcluded);
+    return (FAMILY_COLORS[fam]||['Blush','Cream','White']).filter(notExcluded).slice(0,4);
+  }
+  function applyDescription(text){
+    text=text.trim(); if(!text){ showToast('Tell Muse a little about what you want first.'); brief.focus(); return; }
+    const t=text.toLowerCase();
+    const planner=inferPlanner(t);
+    if(planner){ state.plannerType=planner; state.plannerTypeCustom=''; }
+    if(has(t,['printable + digital','printable and digital','both'])) state.productFormat='Printable + Digital';
+    else if(has(t,['goodnotes','goodnotes-style'])) state.productFormat='Goodnotes-style Planner';
+    else if(has(t,['printable','print'])) state.productFormat='Printable Planner';
+    else if(has(t,['digital','tablet'])) state.productFormat='Digital Planner';
+    const inferredTitle = text.match(/(?:called|titled|title is|name it)\s+["“']([^"”']+)["”']/i);
+    if(inferredTitle) state.title=inferredTitle[1].trim();
+    if(!state.title) state.title='Muse-Created Planner';
+    const pages=inferPageTypes(t), comps=inferComponents(t);
+    if(pages.length) add('pageTypes',pages);
+    if(comps.length) add('components',comps);
+    const fam=chooseFamily(t);
+    if(fam){ state.aesthetic=uniq([fam==='Girly & Sweet'?'Feminine':fam==='Glam & Luxe'?'Luxury':AESTHETIC_FAMILIES[fam][0],...(FAMILY_TYPOGRAPHY[fam]||[]).slice(0,1)]).filter(x=>DATA.aesthetics.includes(x)||DATA.typography.includes(x)); }
+    else if(state.aesthetic.length===0) state.aesthetic=['Modern'];
+    if(state.typography.length===0) state.typography=(FAMILY_TYPOGRAPHY[fam]||['Serif','Sans Serif']).slice(0,2).filter(notExcluded);
+    state.colors=uniq([...(state.colors||[]),...inferColors(t,fam)]).filter(notExcluded).slice(0,5);
+    if(state.decorative.length===0) state.decorative=(FAMILY_DECOR[fam]||['Borders','Frames','Icons']).slice(0,4).filter(notExcluded);
+    if(state.layout.length===0){
+      if(has(t,['spacious','lots of writing space','not cluttered'])) state.layout=['Full Page','Mixed Layout','Blank Space'];
+      else if(has(t,['schedule','hourly'])) state.layout=['Two-Page Spread','Time Blocking','Columns'];
+      else state.layout=['Full Page','Mixed Layout','Boxes / Sections'];
+    }
+    // Translate vague requests into usable structure.
+    const purpose=purposeStatement();
+    if(comps.length===0 && pages.length===0) add('components',pickPreferredComponents().slice(0,5));
+    const excludedText=excluded();
+    intel.innerHTML='<strong>Muse understood:</strong> '+(planner||'a custom planner')+' · '+(fam||'a balanced visual style')+' · '+state.components.slice(0,6).join(', ')+(excludedText.length?' · respecting your exclusions':'');
+    intel.classList.add('show');
+    render();
+    showToast('✨ Muse turned your description into a structured concept');
+  }
+  function surprise(){
+    // Preserve user-entered exclusions and existing deliberate selections, then fill intelligently.
+    if(!state.title) state.title='Muse Surprise Planner';
+    if(!state.plannerType) state.plannerType=pickRandom(DATA.plannerTypes.filter(notExcluded),1)[0];
+    if(!state.productFormat) state.productFormat=pickRandom(DATA.productFormats.filter(notExcluded),1)[0];
+    const fam=pickRandom(Object.keys(AESTHETIC_FAMILIES).filter(notExcluded),1)[0]||'Clean & Modern';
+    state.aesthetic=state.aesthetic.length?state.aesthetic:AESTHETIC_FAMILIES[fam].filter(notExcluded).slice(0,2);
+    state.typography=state.typography.length?state.typography:(FAMILY_TYPOGRAPHY[fam]||DATA.typography).filter(notExcluded).slice(0,2);
+    state.colors=state.colors.length?state.colors:(FAMILY_COLORS[fam]||DATA.colors).filter(notExcluded).slice(0,4);
+    state.decorative=state.decorative.length?state.decorative:(FAMILY_DECOR[fam]||DATA.decorative).filter(notExcluded).slice(0,4);
+    state.layout=state.layout.length?state.layout:pickRandom(DATA.layouts.filter(notExcluded),3);
+    state.pageTypes=state.pageTypes.length?state.pageTypes:pickRandom(allPages.filter(notExcluded),5);
+    const preferred=pickPreferredComponents().filter(notExcluded); state.components=state.components.length?state.components:uniq([...preferred,...pickRandom(DATA.components.filter(notExcluded),4)]).slice(0,7);
+    intel.innerHTML='<strong>Smart Randomize:</strong> Muse created a cohesive '+fam+' direction and matched the layout, typography, palette, decoration, and functional sections instead of randomizing them independently.'; intel.classList.add('show');
+    render(); showToast('🎲 Smart Randomize created a complete concept');
+  }
+  window.smartRandomize=surprise;
+  document.getElementById('smart-describe-btn').onclick=()=>applyDescription(brief.value);
+  document.getElementById('smart-surprise-btn').onclick=surprise;
+  brief.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();applyDescription(brief.value)}});
+
+  // Make existing Generate button produce a richer design blueprint and expose refinement controls.
+  const oldGenerate=generatePrompt;
+  window.generatePrompt=function(){ oldGenerate(); if(versions){ improveArea.hidden=false; } };
+  document.getElementById('generate-btn').onclick=window.generatePrompt;
+
+  function improve(mode){
+    const text=(improveText.value||'').toLowerCase();
+    if(mode==='spacious'||has(text,['writing space','more room','bigger schedule','less clutter','spacious'])) state.layout=uniq([...state.layout,'Full Page','Blank Space','Mixed Layout']);
+    if(mode==='elegant'||has(text,['elegant','luxury','expensive','premium'])){state.aesthetic=uniq([...state.aesthetic,'Elegant','Luxury']);state.typography=uniq([...state.typography,'Serif','Elegant']);state.colors=uniq([...state.colors,'Cream','Gold']);}
+    if(mode==='decorative'||has(text,['decorative','more decoration','prettier'])) state.decorative=uniq([...state.decorative,'Illustrations','Sparkles','Frames']).filter(notExcluded);
+    if(mode==='minimal'||has(text,['minimal','cleaner','simpler','less'])){state.aesthetic=uniq([...state.aesthetic,'Minimalist']);state.decorative=state.decorative.filter(x=>['Borders','Frames','Icons'].includes(x));}
+    if(mode==='layout'||has(text,['layout','rearrange','different layout'])) state.layout=pickRandom(DATA.layouts.filter(notExcluded),3);
+    if(has(text,['add a habit tracker','add habit'])) add('pageTypes',['Habit Tracker']);
+    if(has(text,['add a water tracker','add water'])) add('pageTypes',['Water Tracker']);
+    if(has(text,['add self-care','add self care'])) add('pageTypes',['Self-Care Page']);
+    if(has(text,['remove flowers','no flowers'])) state.decorative=state.decorative.filter(x=>x!=='Flowers');
+    if(has(text,['remove bows','no bows'])) state.decorative=state.decorative.filter(x=>x!=='Bows');
+    render();
+    if(state.title){ versions={v1:buildBlueprint('1','v1'),v2:buildBlueprint('2','v2')}; currentGenId=null; renderOutput(); showToast('✨ Design refined'); }
+  }
+  document.querySelectorAll('[data-improve]').forEach(b=>b.onclick=()=>improve(b.dataset.improve));
+  document.getElementById('apply-improvement').onclick=()=>improve('custom');
+})();
 </script>
 </body>
 </html>
